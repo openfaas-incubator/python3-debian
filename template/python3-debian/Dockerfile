@@ -1,6 +1,6 @@
 FROM python:3
 
-RUN curl -sSL https://github.com/openfaas/faas/releases/download/0.6.11/fwatchdog > /usr/bin/fwatchdog \
+RUN curl -sSL https://github.com/openfaas/faas/releases/download/0.7.6/fwatchdog > /usr/bin/fwatchdog \
     && chmod +x /usr/bin/fwatchdog
 WORKDIR /root/
 
