@@ -1,23 +1,39 @@
+FROM openfaas/classic-watchdog:0.13.4 as watchdog
+
 FROM python:3
 
-RUN curl -sSL https://github.com/openfaas/faas/releases/download/0.13.0/fwatchdog > /usr/bin/fwatchdog \
-    && chmod +x /usr/bin/fwatchdog
-WORKDIR /root/
+COPY --from=watchdog /fwatchdog /usr/bin/fwatchdog
+RUN chmod +x /usr/bin/fwatchdog
+
+RUN useradd -m app
+
+WORKDIR /home/app/
 
 COPY index.py           .
 COPY requirements.txt   .
-RUN pip install -r requirements.txt
+RUN chown -R app /home/app && \
+  mkdir -p /home/app/python && chown -R app /home/app
+
+USER app
+ENV PATH=$PATH:/home/app/.local/bin:/home/app/python/bin/
+ENV PYTHONPATH=$PYTHONPATH:/home/app/python
+
+RUN pip install -r requirements.txt --target=/home/app/python
 
 RUN mkdir -p function
 RUN touch ./function/__init__.py
-WORKDIR /root/function/
+WORKDIR /home/app/function/
 COPY function/requirements.txt	.
-RUN pip install -r requirements.txt
+RUN pip install -r requirements.txt --target=/home/app/python
 
-WORKDIR /root/
+WORKDIR /home/app/
+
+USER root
 COPY function           function
+RUN chown -R app:app ./ && \
+  chmod -R 777 /home/app/python
 
-WORKDIR /root/
+USER app
 
 ENV fprocess="python3 index.py"
 
